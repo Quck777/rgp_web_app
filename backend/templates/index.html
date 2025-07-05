@@ -1,23 +1,62 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>RPG Web App</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
-    body { background: #111; color: #fff; font-family: sans-serif; text-align: center; padding: 2em; }
-    button { padding: 1em 2em; margin: 0.5em; background: #222; color: white; border: 1px solid #444; border-radius: 8px; font-size: 1em; cursor: pointer; }
-    button:hover { background: #333; }
-  </style>
+    <meta charset="UTF-8">
+    <title>RPG Web App</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f4f4f4;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            max-width: 600px;
+            margin: auto;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+        }
+        .log {
+            background: #eee;
+            padding: 10px;
+            border-radius: 10px;
+            height: 200px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+    </style>
 </head>
 <body>
-  <h1>RPG Web App</h1>
-  <h2>Ты находишься в: <strong>{{ location }}</strong></h2>
+<div class="container">
+    <h1>🛡 RPG Браузерная Игра</h1>
+    <p>👤 HP: {{ player.hp }} | ⚔️ Урон: {{ player.attack }} | ⭐ Уровень: {{ player.level }} | ✨ Опыт: {{ player.xp }}/100</p>
+    <p>📍 Местоположение: {{ player.location }}</p>
 
-  <form method="post" action="/move">
-    <button type="submit" name="location" value="Лес">Лес</button>
-    <button type="submit" name="location" value="Шахта">Шахта</button>
-    <button type="submit" name="location" value="Город">Город</button>
-  </form>
+    <form method="post" action="/move">
+        <button name="location" value="Лес">🌲 Лес</button>
+        <button name="location" value="Шахта">⛏ Шахта</button>
+        <button name="location" value="Город">🏙 Город</button>
+    </form>
+
+    {% if monster %}
+        <h2>👹 Противник: {{ monster.name }}</h2>
+        <p>❤️ HP: {{ monster.hp }}</p>
+        <form method="post" action="/attack">
+            <button type="submit">🗡 Атаковать</button>
+        </form>
+    {% endif %}
+
+    <div class="log">
+        {% for entry in player.log[-10:] %}
+            <div>{{ entry }}</div>
+        {% endfor %}
+    </div>
+</div>
 </body>
 </html>
