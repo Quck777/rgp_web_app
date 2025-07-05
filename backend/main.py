@@ -7,7 +7,6 @@ app = FastAPI()
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
-# Простая переменная состояния (для демонстрации)
 current_location = {"name": "Город"}
 
 @app.get("/", response_class=HTMLResponse)
