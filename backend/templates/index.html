@@ -9,11 +9,11 @@
             color: #fff;
             font-family: 'Segoe UI', sans-serif;
             text-align: center;
-            padding: 50px;
+            padding: 40px;
         }
 
-        h1 {
-            font-size: 36px;
+        h1, h2 {
+            margin-bottom: 10px;
         }
 
         form {
@@ -35,14 +35,43 @@
         button:hover {
             background-color: #666;
         }
+
+        .log {
+            background-color: #333;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 30px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: left;
+        }
     </style>
 </head>
 <body>
     <h1>Ты находишься в: {{ location }}</h1>
+    <h2>Здоровье: ❤️ {{ player_hp }}</h2>
+
     <form method="post" action="/move">
         <button type="submit" name="destination" value="Лес">🌲 Лес</button>
         <button type="submit" name="destination" value="Шахта">⛏ Шахта</button>
         <button type="submit" name="destination" value="Город">🏰 Город</button>
     </form>
+
+    {% if show_attack %}
+        <h2>Монстр: {{ monster.name }} (HP: {{ monster.hp }})</h2>
+        <form method="post" action="/attack">
+            <button type="submit">⚔️ Атаковать</button>
+        </form>
+    {% endif %}
+
+    <div class="log">
+        <h3>📜 Лог событий:</h3>
+        <ul>
+            {% for entry in log %}
+                <li>{{ entry }}</li>
+            {% endfor %}
+        </ul>
+    </div>
 </body>
 </html>
