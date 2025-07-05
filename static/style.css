@@ -1,0 +1,39 @@
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #1e1e1e;
+    color: #f0f0f0;
+    padding: 20px;
+}
+.container {
+    max-width: 600px;
+    margin: auto;
+    background: #2e2e2e;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 0 10px #000;
+}
+.panel {
+    background: #3a3a3a;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+.log {
+    background: #252525;
+    padding: 10px;
+    border-radius: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+select, button {
+    padding: 8px 12px;
+    font-size: 16px;
+    margin-top: 10px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+}
+button {
+    background: #4caf50;
+    color: white;
+}
