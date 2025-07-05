@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>RPG Средневековье</title>
+    <script src="/static/script.js" defer></script>
+    <style>
+        body { font-family: Arial; background: #f4f4f4; padding: 20px; }
+        .map { display: grid; grid-template-columns: repeat(5, 100px); gap: 5px; }
+        .cell { border: 1px solid #aaa; background: #fff; padding: 10px; text-align: center; }
+        .current { background: #cfc; }
+    </style>
+</head>
+<head>
+  <!-- ДОБАВЬ ЭТО -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.expand(); // делает окно на весь экран
+    tg.ready();
+  </script>
+</head>
+
+<body>
+    <h1>RPG Средневековье</h1>
+    <h2>
+    Игрок: {{ player.name }}, HP: {{ player.hp }}, Уровень: {{ player.level }}, Опыт: {{ player.exp }}
+</h2>
+
+<div class="map">
+    {% for i in range(5) %}
+        {% for j in range(5) %}
+            {% set is_current = (i == player.x and j == player.y) %}
+            {% set has_monster = (i, j) in monsters %}
+            <div class="cell {{ 'current' if is_current else '' }}">
+                {{ map[i][j] }}
+                {% if has_monster %}👹{% endif %}
+            </div>
+        {% endfor %}
+    {% endfor %}
+</div>
+
+    <div class="map">
+        {% for i in range(5) %}
+            {% for j in range(5) %}
+                {% set is_current = (i == player.x and j == player.y) %}
+                <div class="cell {{ 'current' if is_current else '' }}">{{ map[i][j] }}</div>
+            {% endfor %}
+        {% endfor %}
+    </div>
+
+    <div style="margin-top: 20px;">
+        <button onclick="move('up')">↑ Вверх</button>
+        <button onclick="move('down')">↓ Вниз</button>
+        <button onclick="move('left')">← Влево</button>
+        <button onclick="move('right')">→ Вправо</button>
+    </div>
+
+    <h3>Журнал событий</h3>
+    <ul id="log">
+        {% for entry in log %}
+            <li>{{ entry }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
