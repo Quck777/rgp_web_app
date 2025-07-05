@@ -1,22 +1,40 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <title>RPG Game</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <!-- Telegram WebApp SDK -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <meta charset="UTF-8" />
+  <title>RPG Web App</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body {
+      background: #111;
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      padding: 2em;
+    }
+    button {
+      padding: 1em 2em;
+      margin: 0.5em;
+      background: #222;
+      color: white;
+      border: 1px solid #444;
+      border-radius: 8px;
+      font-size: 1em;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #333;
+    }
+  </style>
 </head>
 <body>
-    <h1>Добро пожаловать в RPG!</h1>
+  <h1>RPG Web App</h1>
+  <h2>Ты находишься в: <strong>{{ location }}</strong></h2>
 
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand(); // Разворачивает WebApp на весь экран
-        tg.ready();  // Говорим Telegram, что всё загружено
-
-        console.log("Telegram WebApp initialized");
-    </script>
+  <form method="post" action="/move">
+    <button type="submit" name="location" value="Лес">Лес</button>
+    <button type="submit" name="location" value="Шахта">Шахта</button>
+    <button type="submit" name="location" value="Город">Город</button>
+  </form>
 </body>
 </html>
