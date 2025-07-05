@@ -3,45 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <title>RPG Web App</title>
-    <style>
-        body { font-family: Arial; background: #f4f4f4; padding: 20px; }
-        .card { background: white; padding: 20px; border-radius: 10px; max-width: 500px; margin: auto; box-shadow: 0 0 10px rgba(0,0,0,0.2); }
-        .buttons form { display: inline; margin: 5px; }
-        h2 { margin-bottom: 5px; }
-        ul { padding-left: 20px; }
-    </style>
 </head>
 <body>
-    <div class="card">
-        <h2>🏰 Локация: {{ location }}</h2>
+    <h1>RPG Средневековье</h1>
+    <p><strong>Локация:</strong> {{ location }}</p>
+    <p>{{ description }}</p>
 
-        <div class="buttons">
-            <form method="post" action="/move"><input type="hidden" name="place" value="forest"><button>🌲 Лес</button></form>
-            <form method="post" action="/move"><input type="hidden" name="place" value="mine"><button>⛏️ Шахта</button></form>
-            <form method="post" action="/move"><input type="hidden" name="place" value="city"><button>🏙️ Город</button></form>
-        </div>
+    <form method="post" action="/move">
+        <button name="place" value="Город">Город</button>
+        <button name="place" value="Лес">Лес</button>
+        <button name="place" value="Шахта">Шахта</button>
+    </form>
 
-        <hr>
+    <form method="post" action="/fight">
+        <button>Сразиться</button>
+    </form>
 
-        <h3>🧙 Персонаж: {{ player.name }}</h3>
-        <ul>
-            <li>❤️ Здоровье: {{ player.hp }}</li>
-            <li>🗡️ Атака: {{ player.attack }}</li>
-            <li>💰 Золото: {{ player.gold }}</li>
-            <li>⭐ Уровень: {{ player.level }}</li>
-            <li>🎓 Опыт: {{ player.exp }}</li>
-        </ul>
+    <h2>Характеристики:</h2>
+    <ul>
+        <li>Сила: {{ player.strength }}</li>
+        <li>Выносливость: {{ player.endurance }}</li>
+        <li>Ловкость: {{ player.agility }}</li>
+        <li>Очки прокачки: {{ player.points }}</li>
+    </ul>
 
-        <h4>🎒 Инвентарь:</h4>
-        {% if player.inventory %}
-            <ul>
-                {% for item in player.inventory %}
-                    <li>{{ item }}</li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p>(пусто)</p>
-        {% endif %}
-    </div>
+    <form method="post" action="/upgrade">
+        <button name="stat" value="strength">Прокачать Силу</button>
+        <button name="stat" value="endurance">Прокачать Выносливость</button>
+        <button name="stat" value="agility">Прокачать Ловкость</button>
+    </form>
+
+    <h2>Лог:</h2>
+    <ul>
+        {% for entry in player.log %}
+            <li>{{ entry }}</li>
+        {% endfor %}
+    </ul>
 </body>
 </html>
