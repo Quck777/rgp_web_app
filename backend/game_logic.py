@@ -1,68 +1,136 @@
-# backend/game_logic.py
-
 import random
+from fastapi import Request
 
-# Базовые локации
-LOCATIONS = {
+# Локации
+locations = {
     "forest": {
         "name": "Лес",
-        "enemies": ["Гоблин", "Волк"],
-        "resources": ["Дерево"],
+        "actions": ["Охота", "Сбор трав", "Рубка деревьев"],
+        "resources": [
+            {"name": "Дерево", "chance": 0.7, "category": "материалы"},
+            {"name": "Ягоды", "chance": 0.5, "category": "еда"},
+            {"name": "Мясо", "chance": 0.2, "category": "еда"},
+        ]
     },
     "mine": {
         "name": "Шахта",
-        "enemies": ["Крыса", "Зомби"],
-        "resources": ["Камень", "Железо"],
+        "actions": ["Добыча руды", "Добыча камня"],
+        "resources": [
+            {"name": "Камень", "chance": 0.8, "category": "материалы"},
+            {"name": "Железная руда", "chance": 0.5, "category": "материалы"},
+            {"name": "Золото", "chance": 0.1, "category": "материалы"},
+        ]
     },
     "town": {
         "name": "Город",
-        "enemies": [],
-        "resources": [],
+        "actions": ["Рынок", "Торговля"],
+        "resources": []
     }
 }
 
-# Получить текущую локацию
-def get_location(location_id: str):
-    return LOCATIONS.get(location_id, LOCATIONS["town"])
+# Стартовая информация о пользователе
+def init_user():
+    return {
+        "location": "forest",
+        "stats": {
+            "strength": 1,
+            "agility": 1,
+            "intelligence": 1
+        },
+        "inventory": [],
+        "log": [],
+        "gold": 0
+    }
 
-# Генерация врага
-def generate_enemy(location: dict) -> dict | None:
-    if location["enemies"]:
-        name = random.choice(location["enemies"])
-        hp = random.randint(5, 15)
-        return {"name": name, "hp": hp}
-    return None
+# Получение текущей локации
+def get_current_location(session: Request) -> dict:
+    user = session.session.get("user")
+    if user:
+        loc_key = user.get("location", "forest")
+        return locations.get(loc_key, locations["forest"])
+    return locations["forest"]
 
-# Боевая система
-def fight(player: dict, enemy: dict) -> tuple[str, dict]:
-    log = ""
-    while player["hp"] > 0 and enemy["hp"] > 0:
-        damage = random.randint(1, player["attack"])
-        enemy["hp"] -= damage
-        log += f"Вы нанесли {damage} урона врагу ({enemy['name']}).\n"
+# Добавление записи в лог
+def add_log(session: Request, message: str):
+    if "user" in session.session:
+        session.session["user"]["log"].insert(0, message)
+        session.session.modified = True
 
-        if enemy["hp"] <= 0:
-            log += f"Вы победили врага: {enemy['name']}!\n"
+# Сбор ресурсов
+def gather_resources(location_key: str, session: Request):
+    user = session.session.get("user")
+    if not user:
+        return
+
+    location = locations.get(location_key)
+    if not location:
+        return
+
+    found_resources = []
+
+    for resource in location["resources"]:
+        if random.random() < resource["chance"]:
+            found_resources.append(resource)
+
+    if found_resources:
+        for res in found_resources:
+            add_to_inventory(session, res["name"], res["category"])
+            add_log(session, f"Вы нашли {res['name']} ({res['category']})!")
+    else:
+        add_log(session, "Ничего не найдено...")
+
+# Добавление предмета в инвентарь
+def add_to_inventory(session: Request, item_name: str, category: str):
+    user = session.session["user"]
+    inventory = user["inventory"]
+
+    for item in inventory:
+        if item["name"] == item_name:
+            item["quantity"] += 1
+            break
+    else:
+        inventory.append({"name": item_name, "quantity": 1, "category": category})
+
+    session.session.modified = True
+
+# Получение инвентаря по категориям
+def get_inventory_by_category(session: Request):
+    user = session.session.get("user", {})
+    inventory = user.get("inventory", [])
+
+    categorized = {}
+    for item in inventory:
+        category = item.get("category", "другое")
+        if category not in categorized:
+            categorized[category] = []
+        categorized[category].append(item)
+
+    return categorized
+
+# Удаление предмета из инвентаря
+def remove_item(session: Request, item_name: str):
+    user = session.session["user"]
+    inventory = user["inventory"]
+
+    for item in inventory:
+        if item["name"] == item_name:
+            item["quantity"] -= 1
+            if item["quantity"] <= 0:
+                inventory.remove(item)
             break
 
-        enemy_damage = random.randint(1, 4)
-        player["hp"] -= enemy_damage
-        log += f"Враг {enemy['name']} нанес {enemy_damage} урона вам.\n"
+    session.session.modified = True
 
-    return log, player
+# Продажа предмета (1 предмет = 5 золота)
+def sell_item(session: Request, item_name: str):
+    user = session.session["user"]
+    inventory = user["inventory"]
 
-# Добыча ресурсов
-def gather_resource(location: dict) -> str:
-    if location["resources"]:
-        resource = random.choice(location["resources"])
-        amount = random.randint(1, 3)
-        return f"Вы собрали {amount} x {resource}"
-    return "Здесь нечего добывать."
+    for item in inventory:
+        if item["name"] == item_name:
+            user["gold"] += 5
+            remove_item(session, item_name)
+            add_log(session, f"Вы продали {item_name} за 5 золота!")
+            break
 
-# Прокачка характеристик
-def upgrade_stat(player: dict, stat: str) -> str:
-    if player["points"] > 0:
-        player[stat] += 1
-        player["points"] -= 1
-        return f"{stat.capitalize()} увеличено!"
-    return "Недостаточно очков навыков."
+    session.session.modified = True

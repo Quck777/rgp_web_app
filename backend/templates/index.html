@@ -1,39 +1,78 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <title>RPG Web App</title>
     <meta charset="UTF-8">
+    <title>Medieval RPG</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/script.js" defer></script>
 </head>
 <body>
-    <h1>Локация: {{ location }}</h1>
+    <div class="container">
+        <h1>Medieval RPG</h1>
 
-    <form action="/move" method="post">
-        <button name="location" value="Лес">Лес</button>
-        <button name="location" value="Шахта">Шахта</button>
-        <button name="location" value="Город">Город</button>
-    </form>
+        <div class="location">
+            Вы находитесь в локации: <span id="current-location">{{ location }}</span>
+        </div>
 
-    <form action="/explore" method="post">
-        <button>Исследовать</button>
-    </form>
+        <div class="actions">
+            <form method="post">
+                <button name="location" value="Лес" class="{% if location == 'Лес' %}active-location{% endif %}">Лес</button>
+                <button name="location" value="Шахта" class="{% if location == 'Шахта' %}active-location{% endif %}">Шахта</button>
+                <button name="location" value="Город" class="{% if location == 'Город' %}active-location{% endif %}">Город</button>
+            </form>
+        </div>
 
-    {% if enemy %}
-        <p>Враг: {{ enemy.name }} | HP: {{ enemy.hp }}</p>
-        <form action="/fight" method="post">
-            <button>Атаковать</button>
-        </form>
-    {% endif %}
+        <div class="character-stats">
+            <div>HP: {{ character.hp }}</div>
+            <div>Атака: {{ character.attack }}</div>
+            <div>Защита: {{ character.defense }}</div>
+            <div>Золото: {{ character.gold }}</div>
+        </div>
 
-    <h2>Ваш персонаж:</h2>
-    <p>HP: {{ player.hp }}</p>
-    <p>Уровень: {{ player.level }}</p>
-    <p>Опыт: {{ player.exp }}</p>
+        <div class="actions">
+            <form method="post">
+                <button name="action" value="fight">Сражаться</button>
+                <button name="action" value="gather">Собирать ресурсы</button>
+                <button name="action" value="rest">Отдохнуть</button>
+            </form>
+        </div>
 
-    <h2>Журнал событий:</h2>
-    <ul>
-        {% for log in logs[::-1][:10] %}
-            <li>{{ log }}</li>
-        {% endfor %}
-    </ul>
+        <div class="inventory">
+            <h2>Инвентарь</h2>
+            {% for category, items in categorized_inventory.items() %}
+                {% if items %}
+                <div class="inventory-category">
+                    <h3>{{ category }}</h3>
+                    {% for item in items %}
+                        <div class="inventory-item">
+                            <span>{{ item.name }} ({{ item.quantity }})</span>
+                            <div class="actions">
+                                <form method="post">
+                                    <input type="hidden" name="delete_item" value="{{ item.name }}">
+                                    <button class="delete-btn">Удалить</button>
+                                </form>
+                                {% if location == 'Город' %}
+                                <form method="post">
+                                    <input type="hidden" name="sell_item" value="{{ item.name }}">
+                                    <button class="sell-btn">Продать</button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <div class="log">
+            <h2>Журнал действий</h2>
+            <ul id="log-list">
+                {% for entry in log %}
+                    <li>{{ entry }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
 </body>
 </html>

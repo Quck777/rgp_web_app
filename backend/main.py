@@ -1,78 +1,72 @@
 from fastapi import FastAPI, Request, Form
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-import random
+from starlette.middleware.sessions import SessionMiddleware
+
+from backend.game_logic import (
+    init_user, get_current_location, add_log,
+    gather_resources, get_inventory_by_category,
+    remove_item, sell_item
+)
 
 app = FastAPI()
 
-app.mount("/static", StaticFiles(directory="backend/static"), name="static")
-templates = Jinja2Templates(directory="backend/templates")
+# Подключение статики и шаблонов
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
 
-# Игровое состояние
-state = {
-    "location": "Лес",
-    "logs": ["Добро пожаловать в игру!"],
-    "enemy": None,
-    "player": {
-        "hp": 100,
-        "attack": 10,
-        "level": 1,
-        "exp": 0
-    }
-}
+# Секретный ключ для сессий
+app.add_middleware(SessionMiddleware, secret_key="secret-key")
 
-enemies_by_location = {
-    "Лес": [{"name": "Волк", "hp": 30, "attack": 5}, {"name": "Медведь", "hp": 50, "attack": 8}],
-    "Шахта": [{"name": "Гоблин", "hp": 40, "attack": 6}, {"name": "Голем", "hp": 70, "attack": 10}],
-    "Город": [{"name": "Разбойник", "hp": 35, "attack": 7}, {"name": "Преступник", "hp": 45, "attack": 9}]
-}
+# Корневая страница
+@app.get("/")
+def root(request: Request):
+    if "user" not in request.session:
+        request.session["user"] = init_user()
 
-@app.get("/", response_class=HTMLResponse)
-async def root(request: Request):
+    current_location = get_current_location(request)
+    inventory = get_inventory_by_category(request)
+
     return templates.TemplateResponse("index.html", {
         "request": request,
-        "location": state["location"],
-        "logs": state["logs"],
-        "enemy": state["enemy"],
-        "player": state["player"]
+        "location": current_location["name"],
+        "actions": current_location["actions"],
+        "stats": request.session["user"]["stats"],
+        "inventory": inventory,
+        "log": request.session["user"]["log"],
+        "gold": request.session["user"].get("gold", 0)
     })
 
-@app.post("/move")
-async def move(location: str = Form(...)):
-    state["location"] = location
-    state["logs"].append(f"Вы перешли в локацию: {location}")
-    return RedirectResponse("/", status_code=302)
+# Обработка действий: перемещение, прокачка и сбор
+@app.post("/action")
+def handle_action(request: Request, action: str = Form(...)):
+    user = request.session.get("user")
 
-@app.post("/explore")
-async def explore():
-    location = state["location"]
-    enemy = random.choice(enemies_by_location[location])
-    state["enemy"] = enemy.copy()
-    state["logs"].append(f"Вы встретили врага: {enemy['name']}!")
-    return RedirectResponse("/", status_code=302)
+    if action in ["forest", "mine", "town"]:
+        user["location"] = action
+        add_log(request, f"Вы переместились в локацию: {action}")
+    elif action.startswith("upgrade_"):
+        stat = action.replace("upgrade_", "")
+        if stat in user["stats"]:
+            user["stats"][stat] += 1
+            add_log(request, f"Вы улучшили характеристику: {stat}")
+    elif action == "gather":
+        location = user["location"]
+        gather_resources(location, request)
 
-@app.post("/fight")
-async def fight():
-    player = state["player"]
-    enemy = state["enemy"]
+    request.session.modified = True
+    return RedirectResponse("/", status_code=303)
 
-    if not enemy:
-        state["logs"].append("Нет врага для атаки.")
-        return RedirectResponse("/", status_code=302)
+# Удаление предмета
+@app.post("/remove")
+def handle_remove(request: Request, item: str = Form(...)):
+    remove_item(request, item)
+    add_log(request, f"Вы удалили предмет: {item}")
+    return RedirectResponse("/", status_code=303)
 
-    player_damage = random.randint(player["attack"] - 3, player["attack"] + 3)
-    enemy["hp"] -= player_damage
-    state["logs"].append(f"Вы нанесли {player_damage} урона врагу ({enemy['name']})")
-
-    if enemy["hp"] <= 0:
-        exp_gain = 10
-        player["exp"] += exp_gain
-        state["logs"].append(f"Вы победили врага {enemy['name']} и получили {exp_gain} опыта!")
-        state["enemy"] = None
-    else:
-        enemy_damage = random.randint(enemy["attack"] - 2, enemy["attack"] + 2)
-        player["hp"] -= enemy_damage
-        state["logs"].append(f"Враг {enemy['name']} атаковал вас и нанёс {enemy_damage} урона!")
-
-    return RedirectResponse("/", status_code=302)
+# Продажа предмета
+@app.post("/sell")
+def handle_sell(request: Request, item: str = Form(...)):
+    sell_item(request, item)
+    return RedirectResponse("/", status_code=303)
