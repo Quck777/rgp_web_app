@@ -1,96 +1,78 @@
 from fastapi import FastAPI, Request, Form
-from fastapi.responses import RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import random
-import os
 
 app = FastAPI()
+
 app.mount("/static", StaticFiles(directory="backend/static"), name="static")
 templates = Jinja2Templates(directory="backend/templates")
 
-# Игровые данные
-player = {
-    "name": "Герой",
-    "location": "Город",
-    "log": [],
-    "strength": 1,
-    "agility": 1,
-    "endurance": 1,
-    "points": 5,
-    "hp": 10,
+# Игровое состояние
+state = {
+    "location": "Лес",
+    "logs": ["Добро пожаловать в игру!"],
+    "enemy": None,
+    "player": {
+        "hp": 100,
+        "attack": 10,
+        "level": 1,
+        "exp": 0
+    }
 }
 
-locations = {
-    "Город": "Добро пожаловать в город.",
-    "Лес": "Ты вошёл в тёмный лес.",
-    "Шахта": "Ты спустился в старую шахту.",
+enemies_by_location = {
+    "Лес": [{"name": "Волк", "hp": 30, "attack": 5}, {"name": "Медведь", "hp": 50, "attack": 8}],
+    "Шахта": [{"name": "Гоблин", "hp": 40, "attack": 6}, {"name": "Голем", "hp": 70, "attack": 10}],
+    "Город": [{"name": "Разбойник", "hp": 35, "attack": 7}, {"name": "Преступник", "hp": 45, "attack": 9}]
 }
 
-monsters = {
-    "Лес": {"name": "Волк", "hp": 5, "damage": 2},
-    "Шахта": {"name": "Гоблин", "hp": 7, "damage": 3},
-    "Город": None,
-}
-
-
-def add_log(message: str):
-    player["log"].insert(0, message)
-    player["log"] = player["log"][:10]
-
-
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
     return templates.TemplateResponse("index.html", {
         "request": request,
-        "player": player,
-        "location": player["location"],
-        "description": locations[player["location"]],
+        "location": state["location"],
+        "logs": state["logs"],
+        "enemy": state["enemy"],
+        "player": state["player"]
     })
 
-
 @app.post("/move")
-async def move(request: Request, place: str = Form(...)):
-    player["location"] = place
-    add_log(f"🔄 Перемещение: {place}")
+async def move(location: str = Form(...)):
+    state["location"] = location
+    state["logs"].append(f"Вы перешли в локацию: {location}")
     return RedirectResponse("/", status_code=302)
 
+@app.post("/explore")
+async def explore():
+    location = state["location"]
+    enemy = random.choice(enemies_by_location[location])
+    state["enemy"] = enemy.copy()
+    state["logs"].append(f"Вы встретили врага: {enemy['name']}!")
+    return RedirectResponse("/", status_code=302)
 
 @app.post("/fight")
-async def fight(request: Request):
-    location = player["location"]
-    monster = monsters.get(location)
+async def fight():
+    player = state["player"]
+    enemy = state["enemy"]
 
-    if not monster:
-        add_log("😐 Здесь нет с кем сражаться.")
+    if not enemy:
+        state["logs"].append("Нет врага для атаки.")
         return RedirectResponse("/", status_code=302)
 
-    player_hp = 5 + player["endurance"] * 2
-    monster_hp = monster["hp"]
-    player_damage = 1 + player["strength"]
-    monster_damage = monster["damage"]
+    player_damage = random.randint(player["attack"] - 3, player["attack"] + 3)
+    enemy["hp"] -= player_damage
+    state["logs"].append(f"Вы нанесли {player_damage} урона врагу ({enemy['name']})")
 
-    while player_hp > 0 and monster_hp > 0:
-        if random.random() < (0.1 + player["agility"] * 0.05):
-            add_log("🌀 Ты уклонился от удара!")
-        else:
-            player_hp -= monster_damage
-
-        monster_hp -= player_damage
-
-    if player_hp > 0:
-        add_log(f"🏆 Ты победил {monster['name']}!")
-        player["points"] += 1
+    if enemy["hp"] <= 0:
+        exp_gain = 10
+        player["exp"] += exp_gain
+        state["logs"].append(f"Вы победили врага {enemy['name']} и получили {exp_gain} опыта!")
+        state["enemy"] = None
     else:
-        add_log("💀 Ты проиграл...")
+        enemy_damage = random.randint(enemy["attack"] - 2, enemy["attack"] + 2)
+        player["hp"] -= enemy_damage
+        state["logs"].append(f"Враг {enemy['name']} атаковал вас и нанёс {enemy_damage} урона!")
 
-    return RedirectResponse("/", status_code=302)
-
-
-@app.post("/upgrade")
-async def upgrade(request: Request, stat: str = Form(...)):
-    if player["points"] > 0 and stat in ["strength", "endurance", "agility"]:
-        player[stat] += 1
-        player["points"] -= 1
-        add_log(f"⬆️ Прокачан параметр: {stat.capitalize()} +1")
     return RedirectResponse("/", status_code=302)
