@@ -1,78 +1,41 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
     <meta charset="UTF-8">
-    <title>Medieval RPG</title>
-    <link rel="stylesheet" href="/style.css">
-    <script src="/script.js" defer></script>
+    <title>RPG Игра</title>
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Medieval RPG</h1>
+    <h1>Добро пожаловать!</h1>
+    <p>Локация: {{ location }}</p>
+    <div>HP: {{ character.hp }} / {{ character.max_hp }}</div>
+    <div>Уровень: {{ character.level }}</div>
+    <div>Атака: {{ character.attack }} | Защита: {{ character.defense }}</div>
+    <div>Золото: {{ gold }}</div>
 
-        <div class="location">
-            Вы находитесь в локации: <span id="current-location">{{ location }}</span>
-        </div>
+    <form method="post" action="/action">
+        <button type="submit" name="action" value="Отдохнуть">Отдохнуть</button>
+        <button type="submit" name="action" value="Выйти в лес">Лес</button>
+        <button type="submit" name="action" value="В шахту">Шахта</button>
+        <button type="submit" name="action" value="Вернуться в город">В город</button>
+        <button type="submit" name="action" value="Сражаться">Сражаться</button>
+        <button type="submit" name="action" value="Собирать ягоды">Собирать ягоды</button>
+        <button type="submit" name="action" value="Добывать руду">Добывать руду</button>
+        <button type="submit" name="action" value="Продать ресурсы">Продать ресурсы</button>
+    </form>
 
-        <div class="actions">
-            <form method="post">
-                <button name="location" value="Лес" class="{% if location == 'Лес' %}active-location{% endif %}">Лес</button>
-                <button name="location" value="Шахта" class="{% if location == 'Шахта' %}active-location{% endif %}">Шахта</button>
-                <button name="location" value="Город" class="{% if location == 'Город' %}active-location{% endif %}">Город</button>
-            </form>
-        </div>
+    <h3>Инвентарь:</h3>
+    <ul>
+        {% for item, qty in inventory.items() %}
+            <li>{{ item }}: {{ qty }}</li>
+        {% endfor %}
+    </ul>
 
-        <div class="character-stats">
-            <div>HP: {{ character.hp }}</div>
-            <div>Атака: {{ character.attack }}</div>
-            <div>Защита: {{ character.defense }}</div>
-            <div>Золото: {{ character.gold }}</div>
-        </div>
-
-        <div class="actions">
-            <form method="post">
-                <button name="action" value="fight">Сражаться</button>
-                <button name="action" value="gather">Собирать ресурсы</button>
-                <button name="action" value="rest">Отдохнуть</button>
-            </form>
-        </div>
-
-        <div class="inventory">
-            <h2>Инвентарь</h2>
-            {% for category, items in categorized_inventory.items() %}
-                {% if items %}
-                <div class="inventory-category">
-                    <h3>{{ category }}</h3>
-                    {% for item in items %}
-                        <div class="inventory-item">
-                            <span>{{ item.name }} ({{ item.quantity }})</span>
-                            <div class="actions">
-                                <form method="post">
-                                    <input type="hidden" name="delete_item" value="{{ item.name }}">
-                                    <button class="delete-btn">Удалить</button>
-                                </form>
-                                {% if location == 'Город' %}
-                                <form method="post">
-                                    <input type="hidden" name="sell_item" value="{{ item.name }}">
-                                    <button class="sell-btn">Продать</button>
-                                </form>
-                                {% endif %}
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-                {% endif %}
-            {% endfor %}
-        </div>
-
-        <div class="log">
-            <h2>Журнал действий</h2>
-            <ul id="log-list">
-                {% for entry in log %}
-                    <li>{{ entry }}</li>
-                {% endfor %}
-            </ul>
-        </div>
-    </div>
+    <h3>Лог действий:</h3>
+    <ul>
+        {% for entry in log %}
+            <li>{{ entry }}</li>
+        {% endfor %}
+    </ul>
 </body>
 </html>
