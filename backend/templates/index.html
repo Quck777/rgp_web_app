@@ -1,42 +1,38 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
     <title>RPG Web App</title>
+    <meta charset="UTF-8">
 </head>
 <body>
-    <h1>RPG Средневековье</h1>
-    <p><strong>Локация:</strong> {{ location }}</p>
-    <p>{{ description }}</p>
+    <h1>Локация: {{ location }}</h1>
 
-    <form method="post" action="/move">
-        <button name="place" value="Город">Город</button>
-        <button name="place" value="Лес">Лес</button>
-        <button name="place" value="Шахта">Шахта</button>
+    <form action="/move" method="post">
+        <button name="location" value="Лес">Лес</button>
+        <button name="location" value="Шахта">Шахта</button>
+        <button name="location" value="Город">Город</button>
     </form>
 
-    <form method="post" action="/fight">
-        <button>Сразиться</button>
+    <form action="/explore" method="post">
+        <button>Исследовать</button>
     </form>
 
-    <h2>Характеристики:</h2>
+    {% if enemy %}
+        <p>Враг: {{ enemy.name }} | HP: {{ enemy.hp }}</p>
+        <form action="/fight" method="post">
+            <button>Атаковать</button>
+        </form>
+    {% endif %}
+
+    <h2>Ваш персонаж:</h2>
+    <p>HP: {{ player.hp }}</p>
+    <p>Уровень: {{ player.level }}</p>
+    <p>Опыт: {{ player.exp }}</p>
+
+    <h2>Журнал событий:</h2>
     <ul>
-        <li>Сила: {{ player.strength }}</li>
-        <li>Выносливость: {{ player.endurance }}</li>
-        <li>Ловкость: {{ player.agility }}</li>
-        <li>Очки прокачки: {{ player.points }}</li>
-    </ul>
-
-    <form method="post" action="/upgrade">
-        <button name="stat" value="strength">Прокачать Силу</button>
-        <button name="stat" value="endurance">Прокачать Выносливость</button>
-        <button name="stat" value="agility">Прокачать Ловкость</button>
-    </form>
-
-    <h2>Лог:</h2>
-    <ul>
-        {% for entry in player.log %}
-            <li>{{ entry }}</li>
+        {% for log in logs[::-1][:10] %}
+            <li>{{ log }}</li>
         {% endfor %}
     </ul>
 </body>
